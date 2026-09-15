@@ -1,129 +1,119 @@
-# ⚡ OPC 活动情报 (杭州 AI / OPC 活动雷达 V0.1)
+<div align="center">
 
-> **全自动运营系统 · 杭州本地 AI / OPC / 创业活动情报中枢**  
-> **核心使命**：解决“杭州今天有什么值得参加的？哪场真正值得去？”——拒绝无意义活动堆砌，聚焦商业落地、一人公司(OPC)变现与技术干货洞察。  
-> **目标自动化率**：$\ge 95\%$（项目所有者无需每日手工维护）。
+# ⚡ OPC 活动情报雷达 (OPC Event Radar)
+### 全国四大科技核心城市 (杭州 · 上海 · 深圳 · 厦门) AI / FDE / OPC 线下组局全自动情报系统
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![CI Pipeline](https://img.shields.io/github/actions/workflow/status/AIMarshallLee/opc-event-radar/daily-radar-scan.yml?branch=main&label=Auto%20Scan%20CI&style=flat-square)](https://github.com/AIMarshallLee/opc-event-radar/actions)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## 📌 一、 系统核心价值与特点
+**不堆砌海量低质活动，只告诉你哪场真正值得去。**  
+通过 AI 巡检引擎与多源探针，全自动监控、提取、去重、核验与 100 分制价值评估，一页洞察国内顶尖线下极客沙龙、闭门会、黑客松与一人公司(OPC)商业共创。
 
-1. **真实数据源驱动**：接入联谱 Lianpu、活动行、SegmentFault 思否、政务与园区公开专区等 **6 个稳定公开源**，当前已实测收录 **70+ 场真实杭州本地未来活动**，拒绝任何虚构 Mock 数据。
-2. **严苛 13 区县地域过滤**：严格识别余杭（未来科技城/梦想小镇/人工智能小镇）、滨江（阿里园区/白马湖）、西湖（云栖/紫金港）、上城（丁兰智慧小镇OPC高地/钱江新城）、拱墅、萧山等 13 个区县。自动剔除异地杂音，线上生态活动单独归类。
-3. **跨源智能去重与富化**：基于标准化标题语义相似度 + 时间重叠度 + 地点/主办方交叉比对，多平台同名活动自动合并，保留所有来源并提升置信度。
-4. **100 分制 AI 价值评估体系**：
-   - 主办方/嘉宾质量（20分）
-   - 内容含金量（20分）
-   - 商务连接价值（20分）
-   - 创业实际价值（15分）
-   - 稀缺性（10分）
-   - 性价比（10分）
-   - 信息可信度（5分）
-   - **五维雷达细分**：知识含金量、社交人脉、商务变现、技术深度、融资对接。
-5. **犀利高密度 AI 推荐评语**：DeepSeek 大模型与本地规则混合驱动，直击“为什么值得去”、“明确适合谁”、“明确劝退谁 (避坑指南)”，杜绝泛泛客套文案。
-6. **全生命周期自主流转**：定时调度器自动完成 `upcoming` $\to$ `today` $\to$ `ongoing` $\to$ `ended` 流转，活动过期自动归档。
-7. **沉淀商业信号 (Business Signals)**：自动沉淀活跃 OPC 组织、高频承办会展园区与明星主办方名单。
+[在线体验](#-快速启动) • [日历订阅](#-全平台日历一键订阅) • [数据源矩阵](#-全景数据源矩阵) • [开源部署](#-生产级一键部署) • [贡献指南](#-参与贡献)
+
+</div>
 
 ---
 
-## 🚀 二、 快速上手与运行
+## 🌟 为什么要做这个开源项目？
 
-### 1. 环境准备
-系统采用轻量单体架构，基于 Python 3.11+ 标准技术栈：
+在目前的各大活动平台中，充斥着大量的招商加盟、泛科普培训与割韭菜讲座。真正的 **前置部署工程师 (FDE)**、**一人公司 (OPC)**、**大模型 Agent 开发者** 以及 **出海创始人** 举办的硬核闭门会、Demo Day 与极客沙龙，往往散落在 Luma、微信公众号推文、小红书自发帖和垂直开发者社区中。
+
+**OPC 活动情报雷达** 致力于彻底解决活动信息不对称：
+1. **自动化率 ≥95%**：无需人工日常维护，全网自动感知发现；
+2. **拒绝假数据与割韭菜**：基于多源交叉验证、主办方背书与 100 分制打分引擎，输出犀利的「AI 推荐理由与避坑指南」；
+3. **全国四大创新核心城市**：杭州大本营、上海模速空间/张江、深圳南山科技园/粤海、厦门出海软件园。
+
+---
+
+## 🏙️ 四大核心城市定位矩阵
+
+| 城市 | 极客与产业标签 | 核心地标与线下据点 | 代表活动类型 |
+| :--- | :--- | :--- | :--- |
+| **⚡ 杭州 (大本营)** | **大模型智能体、电商+AI、一人公司(OPC)、阿里/浙大生态** | 未来科技城、梦想小镇、云栖小镇、滨江物联网小镇 | AI Agent 实战、Vibe Coding 沙龙、OPC 商业路演 |
+| **🗼 上海** | **全球顶级黑客松、跨国开发者、产学研高地、模速空间** | 徐汇西岸智塔、模速空间、张江高科、创智天地 | 闭门 Founder Meetup、AGI 极客日、海外出海研讨 |
+| **🏙️ 深圳** | **硬件+端侧AI、前置交付工程师(FDE)、出海掘金主阵地** | 南山科技园、粤海街道、大族激光中心、深圳湾生态园 | 端侧大模型实战、企业级 FDE 场景共创、出海沙龙 |
+| **🌊 厦门** | **独立开发者(Indie Hacker)、跨境工具出海、小而美独立站** | 软件园二期、软件园三期、观音山商务区、集美创新城 | 出海工具变现、独立开发者面基、跨境电商 AI 研讨 |
+
+---
+
+## 🚀 核心系统特性
+
+* **🌐 首页智能网络定位与平滑回退**：访问首页时自动感知访问者所在省市，命中华东/华南支持城市时自动高亮对应城市活动；若在其他城市或定位受阻，**100% 自动回退默认选中「杭州」**，绝不空白卡死。
+* **📅 全平台 RFC 5545 日历实时订阅**：支持按城市单独订阅（如 `/feed/events.ics?city=深圳`），在 iPhone、Mac Calendar、Google 日历中一键订阅，提前 2 小时推送日程提醒并自带 AI 避坑指南。
+* **📥 微信文章与海报 OCR 秒级补漏**：内置 `/api/intake/wechat` 公开文章直读与多模态海报图片提取接口，群友发一张海报 3 秒结构化入库。
+* **🤖 GitHub Actions 云端永久自运转**：内置 `.github/workflows/daily-radar-scan.yml`，每天在 08:00, 12:00, 18:00, 23:00 四次自动拉起云端虚拟机巡检，发现新活动自动提交推回仓库，**零服务器成本永久运行**。
+* **🎨 现代化浅色 / 深色双主题**：自适应 Tailwind CSS 响应式大屏，骨架屏加载，支持手机端与电脑端极速浏览。
+
+---
+
+## 📦 生产级一键部署
+
+系统采用极简架构，单端口 `8765`，内置 SQLite WAL 模式，无任何外部 Redis 或重型数据库负担。
+
+### 方式一：Docker 一键部署 (推荐)
+
 ```bash
-# 进入项目目录 (严禁使用 cd，保持在工作区根路径或传入相对路径)
-# 确保已安装基础依赖：fastapi, uvicorn, beautifulsoup4, schedule, pydantic
+# 1. 克隆开源仓库
+git clone https://github.com/AIMarshallLee/opc-event-radar.git
+cd opc-event-radar
+
+# 2. 复制环境配置
+cp .env.example .env
+
+# 3. 运行一键部署脚本
+./deploy.sh
 ```
 
-### 2. 一键启动 (后台常驻调度 + Web雷达服务)
-```bash
-PYTHONPATH=. python3 run.py
-```
-- **Web 雷达访问入口**：`http://127.0.0.1:8765`
-- 服务将自动完成：
-  1. 数据库结构初始化 (`data/events.db`)
-  2. 数据源健康状态校验
-  3. 启动后台守护定时任务（每天 08:00, 12:00, 18:00, 23:00 自动巡检）
-  4. 启动轻量响应式活动雷达前端。
+服务就绪后直接访问：
+* Web 主站：`http://localhost:8765`
+* 日历订阅源：`http://localhost:8765/feed/events.ics`
+* 系统健康度端点：`http://localhost:8765/api/stats`
 
-### 3. 手动单次触发增量流水线
-```bash
-PYTHONPATH=. python3 src/pipeline/engine.py
-```
+### 方式二：Python 本地直接运行
 
-### 4. 生成今日/本周社交媒体精选简报
 ```bash
-# 生成本周精选 Markdown 简报
-PYTHONPATH=. python3 src/content/generator.py
+# 1. 初始化虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 启动服务 (自带后台巡检守护线程)
+python3 run.py
 ```
 
 ---
 
-## 🛠️ 三、 核心架构与目录规划
+## 📡 全平台日历一键订阅
 
-```
-opc-event-radar/
-├── run.py                       # 一键启动中枢 (Web + 调度守护)
-├── docs/                        # 交付报告与架构文档
-│   ├── SOURCE_REPORT.md         # Phase 1 数据源可得性实测报告
-│   ├── ARCHITECTURE.md          # 真实系统架构设计
-│   └── DELIVERY_REPORT.md       # V0.1 最终验收与指标交付报告
-├── src/
-│   ├── core/
-│   │   ├── models.py            # Event/Source/PipelineRun/Signal 数据模型
-│   │   └── database.py          # SQLite WAL 高性能存储底座
-│   ├── sources/
-│   │   ├── registry.py          # Source Registry 数据源注册中枢
-│   │   └── verifier.py          # 数据源健康探针与连通性验证
-│   ├── fetchers/
-│   │   ├── base.py              # 抽象采集基类
-│   │   ├── lianpu.py            # 联谱 Lianpu 杭州站采集器
-│   │   ├── huodongxing.py       # 活动行杭州 AI/OPC 采集器
-│   │   ├── segmentfault.py      # 思否全球开发者日历采集器
-│   │   └── discovery.py         # 动态感知雷达采集器
-│   ├── pipeline/
-│   │   ├── location_validator.py# 杭州 13 区县及园区强校验
-│   │   ├── deduplicator.py      # 跨源标题与时空去重合并
-│   │   ├── classifier.py        # 14 大行业分类与标签提取
-│   │   ├── verification.py      # 置信度评估 (0-100分)
-│   │   ├── scorer.py            # 100 分制价值雷达评估
-│   │   ├── comment_generator.py # 犀利中肯 AI 评语引擎
-│   │   └── engine.py            # 多线程并发流水线编排器
-│   ├── scheduler/
-│   │   └── runner.py            # APScheduler/Schedule 增量定时引擎与生命周期管理
-│   ├── content/
-│   │   └── generator.py         # 日/周/周末精选简报自动生成器
-│   └── web/
-│       ├── app.py               # FastAPI 后端路由与可观测性 API
-│       └── static/
-│           └── index.html       # 极简高质感现代响应式前端
-└── tests/
-    └── test_radar_pipeline.py   # 覆盖 14 项异常与边界场景的测试套件
-```
+无论你是使用 Apple 还是 Android 设备，均可直接通过系统的 iCalendar 标准订阅源将最新活动流同步到系统日历中：
+
+| 订阅范围 | 订阅 URL | 说明 |
+| :--- | :--- | :--- |
+| **杭州站专属** | `https://ai.2199.chat/feed/events.ics?city=杭州` | 仅推送杭州本地与线上高分活动 |
+| **上海站专属** | `https://ai.2199.chat/feed/events.ics?city=上海` | 仅推送上海本地与线上高分活动 |
+| **深圳站专属** | `https://ai.2199.chat/feed/events.ics?city=深圳` | 仅推送深圳本地与线上高分活动 |
+| **厦门站专属** | `https://ai.2199.chat/feed/events.ics?city=厦门` | 仅推送厦门本地与线上高分活动 |
+| **全国全城订阅** | `https://ai.2199.chat/feed/events.ics` | 推送四大城市全部精选高分活动 |
 
 ---
 
-## ⚙️ 四、 运营与扩展指南
+## 🤝 参与贡献
 
-### 1. 如何扩展新的数据源？
-1. 在 `src/sources/registry.py` 中添加数据源配置字典（定义 `id`, `name`, `type`, `url`, `fetch_method`）；
-2. 在 `src/fetchers/` 目录下继承 `BaseFetcher` 实现对应站点的 `fetch_raw_candidates()` 方法；
-3. 在 `src/pipeline/engine.py` 的 `FETCHER_MAP` 中注册该数据源映射即可。
-*注：系统内置单源隔离熔断机制，若新源连续失败 $\ge 3$ 次将自动标记为 `degraded`，绝不影响现有源的正常抓取。*
+我们极其欢迎广大开发者、活动主办方与独立开发者共同维护这个开源情报网络！
 
-### 2. 如何调整评分权重与 AI 评语提示词？
-- **评分规则修改**：编辑 `src/pipeline/scorer.py` 中的 `evaluate_event_scores` 函数，可自定义 7 个维度的权重分配与得分上下限。
-- **AI 评语风格调整**：编辑 `src/pipeline/comment_generator.py` 中的提示词模板（System Prompt），可调整毒舌程度、重点侧重赛道（如增加对出海/智能体的偏好）。
-
-### 3. 手动补漏投递 (Manual Intake)
-除了全网自动监测，系统在 Web 界面与 API 均提供手工补漏通道：
-- **Web 端**：点击右上角「+ 补漏投递」粘贴活动通知或海报文本；
-- **API 端**：`POST /api/intake` 携带 `{"raw_text": "...", "url": "..."}`。系统将即时自动调用流水线解析入库。
+1. **Fork 本仓库** 并创建您的特性分支：`git checkout -b feat/my-new-source`；
+2. **新增城市或数据源**：在 `src/sources/registry.py` 和 `src/pipeline/location_validator.py` 中添加地标规则与爬虫；
+3. **提交代码**：遵循 Conventional Commits 规范；
+4. **提交 Pull Request**：CI 自动化测试跑通后，我们将第一时间 Review 并合并上线！
 
 ---
 
-## 📈 五、 成本核算与可观测性
+## 📄 开源许可证
 
-- **规则先行**：90% 的地域判断、噪音过滤、标题去重均走本地正则与轻量算法，零外部调用开销；
-- **增量 AI 研判**：仅对初次入库或重大更新的有效活动调用 DeepSeek 模型生成评语，平均每场活动消耗 $\approx 300$ Tokens（折合成本约 0.0004 元/场）；
-- **月度成本预估**：按每日增量发现 10 场活动计算，单月大模型成本不足 **0.2 元人民币**，实现极致的低成本、高可靠自运营。
+本项目基于 [MIT License](LICENSE) 协议完全开源自由使用。
