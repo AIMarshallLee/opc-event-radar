@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.venv/
+dist/
+build/
+*.tar.gz
+*.zip
+*.sqlite
+data/

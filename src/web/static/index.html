@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OPC 活动情报 | 杭州 AI / OPC 活动雷达 V0.1</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              900: '#4c1d95',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 滚动条自适应 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    .dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased transition-colors duration-200 bg-slate-50 text-slate-900 dark:bg-[#0B0F19] dark:text-gray-100 selection:bg-brand-600 selection:text-white">
+
+  <!-- 顶部导航栏 -->
+  <header class="sticky top-0 z-40 backdrop-blur border-b transition-colors duration-200 bg-white/90 border-slate-200 dark:bg-[#0B0F19]/90 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-brand-500/20">
+          ⚡
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight flex items-center space-x-2 text-slate-900 dark:text-white">
+            <span>OPC 活动情报</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300 border border-brand-500/30">杭州站 V0.1</span>
+          </h1>
+          <p class="text-[11px] text-slate-500 dark:text-gray-400 hidden sm:block">杭州今天有什么值得参加的？一页看完，洞察真价值</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- 主题模式切换按钮 (Light / Dark) -->
+        <button onclick="toggleTheme()" id="themeToggleBtn" title="切换浅色/深色主题" class="text-xs px-2.5 py-1.5 rounded-lg border transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-200">
+          <span id="themeIcon">☀️</span>
+          <span id="themeText" class="hidden sm:inline">浅色</span>
+        </button>
+
+        <!-- 日历订阅 -->
+        <button onclick="openCalendarModal()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 dark:text-indigo-300 dark:border-indigo-500/40 transition flex items-center space-x-1 font-medium">
+          <span>📅 日历订阅</span>
+        </button>
+
+        <!-- 补漏投递 (支持微信公众号、海报图片、文字) -->
+        <button onclick="openIntakeModal()" class="text-xs px-3 py-1.5 rounded-lg border transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-200">
+          <span>+ 补漏投递</span>
+        </button>
+
+        <!-- 运营看板 -->
+        <button onclick="openObservabilityModal()" class="text-xs px-3 py-1.5 rounded-lg border transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-200">
+          <span>📊 运营看板</span>
+        </button>
+
+        <!-- 增量巡检 -->
+        <button onclick="triggerPipeline()" id="syncBtn" class="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium shadow transition flex items-center space-x-1">
+          <span id="syncIcon">🔄</span>
+          <span>巡检</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- 顶部状态指示栏 -->
+    <section class="border rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden transition-colors duration-200 bg-gradient-to-r from-slate-100 via-white to-slate-100 border-slate-200 dark:from-gray-900 dark:via-[#111827] dark:to-gray-900 dark:border-gray-800">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+              全自动运营流水线运行中 (自动化率 ≥95%)
+            </span>
+            <span class="text-xs text-slate-500 dark:text-gray-400">聚焦杭州本土 AI / OPC / 创业生态</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-extrabold mt-1.5 tracking-tight text-slate-900 dark:text-white">
+            不堆砌活动，只告诉你<span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600 dark:from-brand-400 dark:to-indigo-300">哪场值得去</span>
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-gray-400 mt-1 max-w-2xl">
+            跨数据源自动监控：联谱 Lianpu、活动行、思否、微信公众号、政府创投专区。自动完成 13 区县清洗、跨源去重、AI 100分制价值评估与避坑指南。
+          </p>
+        </div>
+        
+        <!-- 统计胶囊 -->
+        <div class="flex items-center space-x-4 p-3 rounded-xl border self-start md:self-auto bg-white/80 border-slate-200 dark:bg-gray-800/60 dark:border-gray-700/60 shadow-sm">
+          <div class="text-center px-2">
+            <div class="text-lg font-bold text-slate-900 dark:text-white" id="statTotal">--</div>
+            <div class="text-[10px] text-slate-500 dark:text-gray-400">有效活动</div>
+          </div>
+          <div class="w-px h-8 bg-slate-200 dark:bg-gray-700"></div>
+          <div class="text-center px-2">
+            <div class="text-lg font-bold text-brand-600 dark:text-brand-400" id="statToday">--</div>
+            <div class="text-[10px] text-slate-500 dark:text-gray-400">今日活动</div>
+          </div>
+          <div class="w-px h-8 bg-slate-200 dark:bg-gray-700"></div>
+          <div class="text-center px-2">
+            <div class="text-lg font-bold text-indigo-600 dark:text-indigo-400" id="statActiveSources">6</div>
+            <div class="text-[10px] text-slate-500 dark:text-gray-400">健康数据源</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 筛选与控制面板 -->
+    <section class="space-y-3">
+      <!-- 第一行：时间切片与排序 -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- 时间筛选 (今天、明天、本周、周末) -->
+        <div class="flex items-center p-1 rounded-xl border text-xs bg-slate-200/70 border-slate-300 dark:bg-gray-900 dark:border-gray-800">
+          <button onclick="setTimeFilter('all')" data-tf="all" class="tf-btn px-3 py-1.5 rounded-lg text-white font-medium bg-brand-600">全部活动</button>
+          <button onclick="setTimeFilter('today')" data-tf="today" class="tf-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">今天</button>
+          <button onclick="setTimeFilter('tomorrow')" data-tf="tomorrow" class="tf-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">明天</button>
+          <button onclick="setTimeFilter('this_week')" data-tf="this_week" class="tf-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">本周</button>
+          <button onclick="setTimeFilter('weekend')" data-tf="weekend" class="tf-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">周末精选</button>
+        </div>
+
+        <!-- 搜索与排序 -->
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+          <div class="relative flex-1 sm:w-64">
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="搜索活动名称/主办方/园区..." class="w-full rounded-xl px-3 py-1.5 text-xs transition border bg-white border-slate-300 text-slate-900 placeholder-slate-400 dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:border-brand-500">
+          </div>
+          <select id="sortSelect" onchange="handleSort()" class="rounded-xl px-3 py-1.5 text-xs border bg-white border-slate-300 text-slate-700 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300 focus:outline-none focus:border-brand-500">
+            <option value="recommendation">默认：综合推荐度</option>
+            <option value="time">按活动时间先后</option>
+            <option value="free_first">仅看免费活动优先</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 第二行：分类胶囊 -->
+      <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs no-scrollbar" id="categoryCapsules">
+        <button onclick="setCategory('all')" data-cat="all" class="cat-btn px-3 py-1 rounded-lg bg-brand-600 text-white font-medium whitespace-nowrap">全部生态</button>
+        <button onclick="setCategory('OPC')" data-cat="OPC" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">🔥 OPC 一人公司</button>
+        <button onclick="setCategory('Agent')" data-cat="Agent" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">🤖 Agent 智能体</button>
+        <button onclick="setCategory('FDE')" data-cat="FDE" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">💼 FDE 场景共创</button>
+        <button onclick="setCategory('AI')" data-cat="AI" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">🧠 AI 大模型</button>
+        <button onclick="setCategory('出海')" data-cat="出海" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">🚢 跨境出海</button>
+        <button onclick="setCategory('开发者')" data-cat="开发者" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">💻 开发者/Hackathon</button>
+        <button onclick="setCategory('投融资')" data-cat="投融资" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">💰 投融资/路演</button>
+        <button onclick="setCategory('创业')" data-cat="创业" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">🌱 创业孵化</button>
+        <button onclick="setCategory('内容')" data-cat="内容" class="cat-btn px-3 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-800 whitespace-nowrap">📱 内容自媒体</button>
+      </div>
+    </section>
+
+    <!-- 活动卡片网格 -->
+    <section>
+      <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- 初始骨架屏 -->
+        <div class="rounded-2xl p-5 space-y-4 animate-pulse border bg-white border-slate-200 dark:bg-[#111827] dark:border-gray-800">
+          <div class="flex justify-between items-center"><div class="h-5 rounded w-20 bg-slate-200 dark:bg-gray-800"></div><div class="h-5 rounded w-16 bg-slate-200 dark:bg-gray-800"></div></div>
+          <div class="h-6 rounded w-3/4 bg-slate-200 dark:bg-gray-800"></div>
+          <div class="space-y-2"><div class="h-4 rounded w-1/2 bg-slate-200/70 dark:bg-gray-800/60"></div><div class="h-4 rounded w-2/3 bg-slate-200/70 dark:bg-gray-800/60"></div></div>
+          <div class="h-14 rounded-xl bg-slate-100 dark:bg-gray-900"></div>
+        </div>
+        <div class="rounded-2xl p-5 space-y-4 animate-pulse border bg-white border-slate-200 dark:bg-[#111827] dark:border-gray-800 hidden sm:block">
+          <div class="flex justify-between items-center"><div class="h-5 rounded w-20 bg-slate-200 dark:bg-gray-800"></div><div class="h-5 rounded w-16 bg-slate-200 dark:bg-gray-800"></div></div>
+          <div class="h-6 rounded w-3/4 bg-slate-200 dark:bg-gray-800"></div>
+          <div class="space-y-2"><div class="h-4 rounded w-1/2 bg-slate-200/70 dark:bg-gray-800/60"></div><div class="h-4 rounded w-2/3 bg-slate-200/70 dark:bg-gray-800/60"></div></div>
+          <div class="h-14 rounded-xl bg-slate-100 dark:bg-gray-900"></div>
+        </div>
+        <div class="rounded-2xl p-5 space-y-4 animate-pulse border bg-white border-slate-200 dark:bg-[#111827] dark:border-gray-800 hidden lg:block">
+          <div class="flex justify-between items-center"><div class="h-5 rounded w-20 bg-slate-200 dark:bg-gray-800"></div><div class="h-5 rounded w-16 bg-slate-200 dark:bg-gray-800"></div></div>
+          <div class="h-6 rounded w-3/4 bg-slate-200 dark:bg-gray-800"></div>
+          <div class="space-y-2"><div class="h-4 rounded w-1/2 bg-slate-200/70 dark:bg-gray-800/60"></div><div class="h-4 rounded w-2/3 bg-slate-200/70 dark:bg-gray-800/60"></div></div>
+          <div class="h-14 rounded-xl bg-slate-100 dark:bg-gray-900"></div>
+        </div>
+      </div>
+      <div id="emptyState" class="hidden text-center py-16">
+        <div class="text-4xl mb-3">🔍</div>
+        <p class="text-sm text-slate-500 dark:text-gray-400">当前筛选条件下暂无活动，可尝试重置筛选或切换时间切片。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 详情弹窗 Modal -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl relative bg-white border-slate-200 text-slate-900 dark:bg-[#111827] dark:border-gray-800 dark:text-gray-100">
+      <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-gray-400 dark:hover:text-white text-lg">✕</button>
+      
+      <div class="space-y-2">
+        <div class="flex items-center space-x-2">
+          <span id="mCategory" class="text-xs px-2.5 py-0.5 rounded-md font-medium bg-brand-50 text-brand-700 border border-brand-200 dark:bg-brand-600/30 dark:text-brand-300 dark:border-brand-500/30">--</span>
+          <span id="mDistrict" class="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-300">--</span>
+          <span id="mScoreBadge" class="text-xs px-2 py-0.5 rounded-md font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">-- 分</span>
+        </div>
+        <h3 id="mTitle" class="text-lg font-bold tracking-tight leading-snug text-slate-900 dark:text-white">--</h3>
+        <p class="text-xs flex items-center space-x-2 text-slate-500 dark:text-gray-400">
+          <span>主办方：<strong class="text-slate-800 dark:text-gray-200" id="mOrganizer">--</strong></span>
+          <span>•</span>
+          <span id="mPrice" class="font-medium text-emerald-600 dark:text-emerald-400">免费</span>
+        </p>
+      </div>
+
+      <!-- 时间地点条目 -->
+      <div class="rounded-xl p-3 text-xs space-y-1.5 border bg-slate-50 border-slate-200 dark:bg-gray-900/80 dark:border-gray-800">
+        <div class="flex items-start space-x-2">
+          <span class="text-slate-400 dark:text-gray-500">📅 时间:</span>
+          <span id="mTime" class="text-slate-800 dark:text-gray-200 font-medium">--</span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span class="text-slate-400 dark:text-gray-500">📍 地点:</span>
+          <span id="mLocation" class="text-slate-800 dark:text-gray-200">--</span>
+        </div>
+      </div>
+
+      <!-- 五维价值雷达分析 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-300">五维活动价值雷达 (0-100)</h4>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]" id="radarScores">
+          <!-- 动态渲染进度条 -->
+        </div>
+      </div>
+
+      <!-- 犀利 AI 评语剖析 -->
+      <div class="space-y-3 rounded-xl p-4 text-xs border bg-brand-50/50 border-brand-200 dark:bg-brand-900/10 dark:border-brand-500/20">
+        <div>
+          <span class="font-bold flex items-center space-x-1 mb-1 text-brand-700 dark:text-brand-300">
+            <span>💡 为什么值得去？</span>
+          </span>
+          <p id="mReason" class="leading-relaxed text-slate-700 dark:text-gray-300">--</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-gray-800/80">
+          <div>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">🎯 适合谁：</span>
+            <p id="mSuitable" class="mt-0.5 text-slate-600 dark:text-gray-400">--</p>
+          </div>
+          <div>
+            <span class="font-bold text-rose-600 dark:text-rose-400">🚫 不太适合谁 (避坑)：</span>
+            <p id="mNotSuitable" class="mt-0.5 text-slate-600 dark:text-gray-400">--</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 简介与多来源信息 -->
+      <div class="space-y-2 text-xs">
+        <h4 class="text-xs font-bold text-slate-500 dark:text-gray-400">活动详情摘要</h4>
+        <p id="mDesc" class="leading-relaxed text-[12px] text-slate-600 dark:text-gray-400">--</p>
+      </div>
+
+      <div class="pt-3 border-t flex items-center justify-between border-slate-200 dark:border-gray-800">
+        <span class="text-[11px] text-slate-500 dark:text-gray-500" id="mSourcesText">来源：官方可信</span>
+        <a id="mSignupLink" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs shadow-lg shadow-brand-500/20 transition flex items-center space-x-1">
+          <span>前往官方页面报名</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全平台日历订阅 Modal -->
+  <div id="calendarModal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative bg-white border-slate-200 text-slate-900 dark:bg-[#111827] dark:border-gray-800 dark:text-gray-100">
+      <button onclick="closeCalendarModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-gray-400 dark:hover:text-white text-lg">✕</button>
+      <div>
+        <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 mb-2">
+          <span>📅 RFC 5545 标准日历协议</span>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">一键订阅到系统日历 (iPhone / Mac / Outlook)</h3>
+        <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">未来评分 ≥75 分的杭州优质 AI / OPC 活动将自动同步到你的手机/电脑日程表，并在开场前 2 小时推送日程提醒。</p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="border rounded-xl p-3 space-y-2 bg-slate-50 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+          <label class="block font-medium text-slate-700 dark:text-gray-300">您的专属日历订阅地址：</label>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="calFeedUrl" readonly class="w-full border rounded-lg px-2.5 py-1.5 text-xs font-mono select-all bg-white border-slate-300 text-brand-700 dark:bg-black/50 dark:border-gray-700 dark:text-brand-300">
+            <button onclick="copyCalendarUrl()" id="copyCalBtn" class="px-3 py-1.5 rounded-lg border whitespace-nowrap transition bg-white hover:bg-slate-100 border-slate-300 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-200">
+              复制
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-1 text-slate-700 dark:text-gray-300">
+          <div class="font-bold text-slate-900 dark:text-gray-200">📱 快速配置指引：</div>
+          <div class="p-2.5 rounded-xl border space-y-1.5 text-[11px] bg-slate-50 border-slate-200 text-slate-600 dark:bg-gray-900/60 dark:border-gray-800/80 dark:text-gray-400">
+            <p>• <strong>Apple 日历 (iPhone/Mac)</strong>：打开「日历」应用 ➔ 文件 ➔「新建日历订阅」➔ 粘贴上方链接并设置每小时刷新。</p>
+            <p>• <strong>Outlook / Google Calendar</strong>：进入网页版 ➔ 添加日历 ➔ 从 Web 订阅 ➔ 粘贴上方链接即可全端自动同步。</p>
+          </div>
+        </div>
+
+        <button onclick="oneClickSubscribe()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition shadow-lg shadow-indigo-500/20 text-xs flex items-center justify-center space-x-1.5">
+          <span>🚀 直接唤起系统日历一键订阅</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手动补漏与多来源摄入 Modal (核心支持公众号文章直读、海报、文字) -->
+  <div id="intakeModal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="border rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative bg-white border-slate-200 text-slate-900 dark:bg-[#111827] dark:border-gray-800 dark:text-gray-100">
+      <button onclick="closeIntakeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-gray-400 dark:hover:text-white text-lg">✕</button>
+      <div>
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">📥 活动情报补漏摄入</h3>
+        <p class="text-xs text-slate-500 dark:text-gray-400 mt-0.5">支持公众号文章链接秒级直读、海报图片视觉解析或纯文本通知</p>
+      </div>
+
+      <!-- 三大选项卡切换 -->
+      <div class="flex items-center p-1 rounded-xl border text-xs bg-slate-100 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+        <button onclick="switchIntakeTab('wechat')" id="tabWechatBtn" class="flex-1 py-1.5 rounded-lg font-medium transition text-white bg-brand-600">📲 公众号文章</button>
+        <button onclick="switchIntakeTab('image')" id="tabImageBtn" class="flex-1 py-1.5 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">📷 海报图片</button>
+        <button onclick="switchIntakeTab('text')" id="tabTextBtn" class="flex-1 py-1.5 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">📝 微信群文本</button>
+      </div>
+
+      <!-- 1. 公众号文章直读表单 (用户最核心需求) -->
+      <div id="intakeWechatForm" class="space-y-3 text-xs">
+        <div class="p-3 rounded-xl border space-y-2 bg-emerald-50/60 border-emerald-200 text-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-300">
+          <div class="font-bold flex items-center space-x-1">
+            <span>⚡ 微信公众号文章秒级直读</span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-emerald-800 dark:text-emerald-400">
+            无需人工整理！只需粘贴以 <code>https://mp.weixin.qq.com/</code> 开头的文章分享链接，系统将自动抓取全文、主办方与活动时空，秒级清洗入库。
+          </p>
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-700 dark:text-gray-300">微信公众号文章链接：</label>
+          <input type="url" id="wechatArticleUrl" placeholder="https://mp.weixin.qq.com/s/..." class="w-full border rounded-xl p-2.5 text-xs transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:border-brand-500">
+        </div>
+        <button onclick="submitWeChatIntake()" id="wechatSubmitBtn" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium transition shadow-lg shadow-brand-500/20 flex items-center justify-center space-x-1">
+          <span>🚀 立即读取公众号并解析入库</span>
+        </button>
+      </div>
+
+      <!-- 2. 图片海报上传表单 -->
+      <div id="intakeImageForm" class="hidden space-y-3 text-xs">
+        <div class="border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer bg-slate-50 border-slate-300 hover:border-brand-500 dark:bg-gray-900/50 dark:border-gray-700 dark:hover:border-brand-500" onclick="document.getElementById('posterInput').click()">
+          <div class="text-3xl mb-1">🖼️</div>
+          <p class="font-medium text-slate-800 dark:text-gray-300">点击或将活动海报拖拽至此</p>
+          <p class="text-[11px] mt-0.5 text-slate-500 dark:text-gray-500">支持 JPG、PNG、WebP，多模态视觉大模型秒级抽取主题、时间与地址</p>
+          <input type="file" id="posterInput" accept="image/*" class="hidden" onchange="handlePosterSelect(event)">
+        </div>
+        <div id="selectedImagePreview" class="hidden text-xs truncate p-2 rounded-lg border bg-slate-100 border-slate-200 text-brand-600 dark:bg-gray-900 dark:border-gray-800 dark:text-brand-300">
+          已选择文件: <span id="posterFileName"></span>
+        </div>
+        <button onclick="submitPosterIntake()" id="posterSubmitBtn" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium transition shadow-lg shadow-brand-500/20">
+          开始多模态智能提取
+        </button>
+      </div>
+
+      <!-- 3. 文字投递表单 -->
+      <div id="intakeTextForm" class="hidden space-y-3 text-xs">
+        <div>
+          <label class="block font-medium mb-1 text-slate-700 dark:text-gray-300">微信群通知文本：</label>
+          <textarea id="intakeText" rows="4" placeholder="例如：【杭州OPC闭门会】本周五下午在余杭区未来科技城举办，探讨单人出海与智能体..." class="w-full border rounded-xl p-2.5 transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:border-brand-500"></textarea>
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-700 dark:text-gray-300">外部链接 / 参考网页 (选填)：</label>
+          <input type="text" id="intakeUrl" placeholder="https://..." class="w-full border rounded-xl p-2.5 transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:border-brand-500">
+        </div>
+        <button onclick="submitIntake()" id="intakeSubmitBtn" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium transition shadow-lg shadow-brand-500/20">
+          立即结构化解析入库
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 可观测性与商业信号面板 Modal -->
+  <div id="observabilityModal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative bg-white border-slate-200 text-slate-900 dark:bg-[#111827] dark:border-gray-800 dark:text-gray-100">
+      <button onclick="closeObservabilityModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-gray-400 dark:hover:text-white text-lg">✕</button>
+
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">📊 系统运营与可观测性看板</h3>
+        <p class="text-xs text-slate-500 dark:text-gray-400 mt-0.5">回答“今天到底干了什么”与沉淀的高频活动园区/组织信号</p>
+      </div>
+
+      <!-- 数据源监控 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-300">数据源健康状态监控 (Source Registry)</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs" id="sourcesMonitorList">
+          <!-- 动态加载 -->
+        </div>
+      </div>
+
+      <!-- 商业信号 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-300">高频活动园区与活跃 OPC 组织 (Business Signals)</h4>
+        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1" id="businessSignalsList">
+          <!-- 动态加载 -->
+        </div>
+      </div>
+
+      <!-- 最近流水记录 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-300">最近 Pipeline 流水记录 (Pipeline Runs)</h4>
+        <div class="space-y-1.5 text-xs" id="recentRunsList">
+          <!-- 动态加载 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="border-t py-6 mt-12 transition-colors duration-200 bg-white border-slate-200 dark:bg-[#0B0F19] dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs space-y-1 text-slate-500 dark:text-gray-500">
+      <p>OPC 活动情报 · 杭州 AI / OPC 活动雷达 V0.1 · 全自动运营系统</p>
+      <p>数据源由 AI 巡检引擎每日四次增量抓取 · 仅做推荐参考，请以主办方官方发布为准</p>
+    </div>
+  </footer>
+
+  <!-- 页面交互逻辑 -->
+  <script>
+    // 1. 主题初始化与切换 (Light / Dark)
+    function initTheme() {
+      const saved = localStorage.getItem('opc_theme');
+      if (saved === 'light') {
+        document.documentElement.classList.remove('dark');
+        updateThemeUI('light');
+      } else {
+        document.documentElement.classList.add('dark');
+        updateThemeUI('dark');
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('opc_theme', 'light');
+        updateThemeUI('light');
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('opc_theme', 'dark');
+        updateThemeUI('dark');
+      }
+    }
+
+    function updateThemeUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      if (theme === 'light') {
+        icon.innerText = '🌙';
+        text.innerText = '深色';
+      } else {
+        icon.innerText = '☀️';
+        text.innerText = '浅色';
+      }
+    }
+
+    // 运行初始化
+    initTheme();
+
+    let currentFilter = {
+      time_filter: 'all',
+      category: 'all',
+      sort_by: 'recommendation',
+      search: ''
+    };
+    let allEventsCache = [];
+
+    // 初始化加载
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchEvents();
+      fetchStats();
+    });
+
+    async function fetchEvents() {
+      try {
+        const query = new URLSearchParams(currentFilter).toString();
+        const res = await fetch(`/api/events?${query}`);
+        const data = await res.json();
+        allEventsCache = data.events || [];
+        renderEvents(allEventsCache);
+        document.getElementById('statTotal').innerText = data.total || 0;
+      } catch (err) {
+        console.error('加载活动失败:', err);
+      }
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/observability');
+        const data = await res.json();
+        if (data.summary) {
+          document.getElementById('statToday').innerText = data.summary.upcoming_events || 0;
+          document.getElementById('statActiveSources').innerText = data.summary.active_sources || 6;
+        }
+      } catch (err) {}
+    }
+
+    function renderEvents(events) {
+      const container = document.getElementById('eventsContainer');
+      const emptyState = document.getElementById('emptyState');
+      if (!events || events.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = events.map(ev => {
+        const scoreBadgeClass = ev.overall_score >= 80 
+          ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' 
+          : 'text-brand-700 bg-brand-50 border-brand-200 dark:text-brand-400 dark:bg-brand-500/10 dark:border-brand-500/20';
+        
+        const priceBadge = ev.price === 0 
+          ? '<span class="text-emerald-600 dark:text-emerald-400 font-bold">免费</span>' 
+          : `<span class="text-amber-600 dark:text-amber-400 font-medium">${ev.price_text}</span>`;
+        
+        return `
+          <div class="border rounded-2xl p-5 transition-all flex flex-col justify-between group shadow-sm hover:shadow-md bg-white border-slate-200 hover:border-brand-400 dark:bg-[#111827] dark:border-gray-800 dark:hover:border-brand-500/50">
+            <div class="space-y-3">
+              <!-- 顶部标签与评分 -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                  <span class="text-[11px] px-2 py-0.5 rounded-md font-semibold border bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30">
+                    ${ev.category}
+                  </span>
+                  <span class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-300">
+                    ${ev.district || '杭州'}
+                  </span>
+                  ${ev.source_id.includes('wechat') ? '<span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">微信公众号</span>' : ''}
+                </div>
+                <div class="px-2 py-0.5 rounded-lg border text-xs font-black ${scoreBadgeClass}">
+                  ★ ${ev.overall_score} 分
+                </div>
+              </div>
+
+              <!-- 活动标题 -->
+              <h3 class="text-sm sm:text-base font-bold transition line-clamp-2 leading-snug cursor-pointer text-slate-900 group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-300" onclick="openDetailModal('${ev.id}')">
+                ${ev.title}
+              </h3>
+
+              <!-- 主办与时空 -->
+              <div class="space-y-1 text-xs text-slate-500 dark:text-gray-400">
+                <div class="flex items-center space-x-1.5 truncate">
+                  <span class="text-slate-400 dark:text-gray-500">🏢</span>
+                  <span class="truncate font-medium">${ev.organizer || '未知主办方'}</span>
+                </div>
+                <div class="flex items-center space-x-1.5 truncate">
+                  <span class="text-slate-400 dark:text-gray-500">📅</span>
+                  <span class="font-medium">${ev.start_time}</span>
+                  <span class="text-slate-300 dark:text-gray-600">|</span>
+                  <span class="truncate">${ev.venue || '杭州'}</span>
+                </div>
+              </div>
+
+              <!-- AI 核心一句话推荐理由 -->
+              <div class="rounded-xl p-2.5 text-xs border bg-slate-50 border-slate-200/80 text-slate-700 dark:bg-gray-900/90 dark:border-gray-800/80 dark:text-gray-300">
+                <div class="text-[10px] font-bold mb-0.5 flex items-center space-x-1 text-brand-700 dark:text-brand-400">
+                  <span>💡 为什么值得去</span>
+                </div>
+                <p class="line-clamp-2 leading-relaxed">${ev.recommendation_reason || '具有较高产业交流与实战落地价值。'}</p>
+              </div>
+            </div>
+
+            <!-- 卡片底栏 -->
+            <div class="pt-4 mt-3 border-t flex items-center justify-between border-slate-100 dark:border-gray-800">
+              <div class="text-xs">
+                ${priceBadge}
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="openDetailModal('${ev.id}')" class="text-xs px-2.5 py-1 rounded-lg border transition bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-700">
+                  洞察
+                </button>
+                <a href="${ev.signup_url || ev.source_url}" target="_blank" class="text-xs px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium transition shadow-sm flex items-center space-x-0.5">
+                  <span>报名</span>
+                  <span class="text-[10px]">↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 交互过滤函数
+    function setTimeFilter(tf) {
+      currentFilter.time_filter = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        if (btn.dataset.tf === tf) {
+          btn.className = "tf-btn px-3 py-1.5 rounded-lg text-white font-medium bg-brand-600";
+        } else {
+          btn.className = "tf-btn px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white";
+        }
+      });
+      fetchEvents();
+    }
+
+    function setCategory(cat) {
+      currentFilter.category = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = "cat-btn px-3 py-1 rounded-lg bg-brand-600 text-white font-medium whitespace-nowrap";
+        } else {
+          btn.className = "cat-btn px-3 py-1 rounded-lg border whitespace-nowrap bg-slate-200/70 hover:bg-slate-300 text-slate-700 border-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-300 dark:border-gray-800";
+        }
+      });
+      fetchEvents();
+    }
+
+    function handleSort() {
+      currentFilter.sort_by = document.getElementById('sortSelect').value;
+      fetchEvents();
+    }
+
+    let searchTimer = null;
+    function handleSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        currentFilter.search = document.getElementById('searchInput').value.trim();
+        fetchEvents();
+      }, 300);
+    }
+
+    // 详情 Modal
+    function openDetailModal(id) {
+      const ev = allEventsCache.find(x => x.id === id);
+      if (!ev) return;
+
+      document.getElementById('mTitle').innerText = ev.title;
+      document.getElementById('mCategory').innerText = ev.category;
+      document.getElementById('mDistrict').innerText = ev.district || '杭州';
+      document.getElementById('mScoreBadge').innerText = `★ ${ev.overall_score} 分推荐`;
+      document.getElementById('mOrganizer').innerText = ev.organizer || '未知';
+      document.getElementById('mPrice').innerText = ev.price === 0 ? '免费' : ev.price_text;
+      document.getElementById('mTime').innerText = ev.start_time;
+      document.getElementById('mLocation').innerText = `${ev.district || ''} ${ev.venue || ''} ${ev.address || ''}`;
+      document.getElementById('mDesc').innerText = ev.description || '暂无详细描述';
+      document.getElementById('mReason').innerText = ev.recommendation_reason || '--';
+      document.getElementById('mSuitable').innerText = ev.suitable_for || '--';
+      document.getElementById('mNotSuitable').innerText = ev.not_suitable_for || '--';
+      document.getElementById('mSignupLink').href = ev.signup_url || ev.source_url;
+      document.getElementById('mSourcesText').innerText = `来源：${ev.source_name} (${ev.verification_status === 'verified' ? '已核实' : '部分待核实'})`;
+
+      const radar = [
+        { label: '知识含金量', val: ev.learning_score },
+        { label: '社交人脉', val: ev.networking_score },
+        { label: '商务变现', val: ev.business_score },
+        { label: '技术深度', val: ev.technical_score },
+        { label: '融资对接', val: ev.fundraising_score }
+      ];
+      document.getElementById('radarScores').innerHTML = radar.map(r => `
+        <div class="p-2 rounded-lg border text-center bg-slate-50 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+          <div class="text-[10px] text-slate-500 dark:text-gray-400">${r.label}</div>
+          <div class="text-sm font-black mt-0.5 text-brand-700 dark:text-brand-300">${r.val}</div>
+          <div class="w-full h-1 rounded-full mt-1 overflow-hidden bg-slate-200 dark:bg-gray-800">
+            <div class="bg-brand-600 dark:bg-brand-500 h-full rounded-full" style="width: ${r.val}%"></div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    // 日历 Modal
+    function openCalendarModal() {
+      const feedUrl = window.location.origin + '/feed/hangzhou-ai.ics?min_score=75';
+      document.getElementById('calFeedUrl').value = feedUrl;
+      document.getElementById('calendarModal').classList.remove('hidden');
+    }
+
+    function closeCalendarModal() {
+      document.getElementById('calendarModal').classList.add('hidden');
+    }
+
+    function copyCalendarUrl() {
+      const input = document.getElementById('calFeedUrl');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      const btn = document.getElementById('copyCalBtn');
+      btn.innerText = '已复制!';
+      setTimeout(() => btn.innerText = '复制', 2000);
+    }
+
+    function oneClickSubscribe() {
+      const feedUrl = window.location.origin + '/feed/hangzhou-ai.ics?min_score=75';
+      const webcalUrl = feedUrl.replace(/^https?:\/\//i, 'webcal://');
+      window.location.href = webcalUrl;
+    }
+
+    // 看板 Modal
+    async function openObservabilityModal() {
+      document.getElementById('observabilityModal').classList.remove('hidden');
+      try {
+        const res = await fetch('/api/observability');
+        const data = await res.json();
+        
+        document.getElementById('sourcesMonitorList').innerHTML = data.sources.map(s => `
+          <div class="p-2.5 rounded-xl border flex items-center justify-between bg-slate-50 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+            <div>
+              <div class="font-bold text-xs text-slate-800 dark:text-gray-200">${s.name}</div>
+              <div class="text-[10px] text-slate-400 dark:text-gray-500">${s.type} · ${s.fetch_method}</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}">
+              ${s.status}
+            </span>
+          </div>
+        `).join('');
+
+        document.getElementById('businessSignalsList').innerHTML = data.business_signals.map(b => `
+          <div class="p-2 rounded-lg text-xs flex items-center justify-between border bg-slate-50/80 border-slate-200 dark:bg-gray-900/80 dark:border-gray-800">
+            <span class="font-medium text-slate-800 dark:text-gray-200">${b.organization}</span>
+            <span class="text-[10px] text-brand-600 dark:text-brand-400 font-bold">${b.potential_value} (频次:${b.frequency})</span>
+          </div>
+        `).join('');
+
+        document.getElementById('recentRunsList').innerHTML = data.recent_runs.map(r => `
+          <div class="p-2.5 rounded-xl border space-y-1 bg-slate-50 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-gray-400">
+              <span>运行时间: ${r.start_time.slice(0, 19).replace('T', ' ')}</span>
+              <span class="text-emerald-600 dark:text-emerald-400 font-bold">${r.status}</span>
+            </div>
+            <p class="text-xs text-slate-700 dark:text-gray-300">${r.summary}</p>
+          </div>
+        `).join('');
+
+      } catch (e) {
+        console.error('获取看板数据失败:', e);
+      }
+    }
+
+    function closeObservabilityModal() {
+      document.getElementById('observabilityModal').classList.add('hidden');
+    }
+
+    // 补漏 Tab 切换 (公众号 / 海报 / 文本)
+    function switchIntakeTab(tab) {
+      const wechatForm = document.getElementById('intakeWechatForm');
+      const imageForm = document.getElementById('intakeImageForm');
+      const textForm = document.getElementById('intakeTextForm');
+
+      const btnWechat = document.getElementById('tabWechatBtn');
+      const btnImage = document.getElementById('tabImageBtn');
+      const btnText = document.getElementById('tabTextBtn');
+
+      wechatForm.classList.add('hidden');
+      imageForm.classList.add('hidden');
+      textForm.classList.add('hidden');
+
+      const activeClass = "flex-1 py-1.5 rounded-lg font-medium transition text-white bg-brand-600";
+      const inactiveClass = "flex-1 py-1.5 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white";
+
+      btnWechat.className = inactiveClass;
+      btnImage.className = inactiveClass;
+      btnText.className = inactiveClass;
+
+      if (tab === 'wechat') {
+        wechatForm.classList.remove('hidden');
+        btnWechat.className = activeClass;
+      } else if (tab === 'image') {
+        imageForm.classList.remove('hidden');
+        btnImage.className = activeClass;
+      } else {
+        textForm.classList.remove('hidden');
+        btnText.className = activeClass;
+      }
+    }
+
+    function openIntakeModal() {
+      document.getElementById('intakeModal').classList.remove('hidden');
+    }
+    function closeIntakeModal() {
+      document.getElementById('intakeModal').classList.add('hidden');
+    }
+
+    // 微信公众号文章直读提交
+    async function submitWeChatIntake() {
+      const url = document.getElementById('wechatArticleUrl').value.trim();
+      if (!url) {
+        alert('请输入微信公众号文章链接！');
+        return;
+      }
+      if (!url.includes('weixin.qq.com')) {
+        alert('链接格式不正确，必须包含 weixin.qq.com');
+        return;
+      }
+
+      const btn = document.getElementById('wechatSubmitBtn');
+      btn.innerText = '正在读取文章并执行杭州地域与价值评估...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/intake/wechat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert(`🎉 微信公众号文章解析成功！\n【活动】${data.event.title}\n【主办】${data.event.organizer}\n【时间】${data.event.start_time}\n【评分】★ ${data.event.overall_score}分`);
+          document.getElementById('wechatArticleUrl').value = '';
+          closeIntakeModal();
+          fetchEvents();
+        } else {
+          alert('提示: ' + (data.message || '录入受限'));
+        }
+      } catch (err) {
+        alert('抓取失败: ' + err);
+      } finally {
+        btn.innerText = '🚀 立即读取公众号并解析入库';
+        btn.disabled = false;
+      }
+    }
+
+    // 海报上传
+    let selectedPosterFile = null;
+    function handlePosterSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedPosterFile = file;
+        document.getElementById('posterFileName').innerText = file.name;
+        document.getElementById('selectedImagePreview').classList.remove('hidden');
+      }
+    }
+
+    async function submitPosterIntake() {
+      if (!selectedPosterFile) {
+        alert('请先选择或拖拽一张活动宣传海报图片！');
+        return;
+      }
+      const btn = document.getElementById('posterSubmitBtn');
+      btn.innerText = '视觉大模型正在解析海报主题与时空...';
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedPosterFile);
+
+        const res = await fetch('/api/intake/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert(`海报解析入库成功！\n【活动】${data.event.title}\n【时间】${data.event.start_time}\n【地点】${data.event.venue}`);
+          closeIntakeModal();
+          fetchEvents();
+        } else {
+          alert('解析提示: ' + (data.message || '识别失败'));
+        }
+      } catch (err) {
+        alert('上传解析失败: ' + err);
+      } finally {
+        btn.innerText = '开始多模态智能提取';
+        btn.disabled = false;
+        selectedPosterFile = null;
+        document.getElementById('selectedImagePreview').classList.add('hidden');
+      }
+    }
+
+    // 纯文本投递
+    async function submitIntake() {
+      const text = document.getElementById('intakeText').value.trim();
+      const url = document.getElementById('intakeUrl').value.trim();
+      if (!text) {
+        alert('请输入活动通知文本！');
+        return;
+      }
+      const btn = document.getElementById('intakeSubmitBtn');
+      btn.innerText = '正在结构化抽取与评分中...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_text: text, url: url })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('投递成功！活动已自动完成清洗并入库。');
+          closeIntakeModal();
+          fetchEvents();
+        } else {
+          alert('提示: ' + data.message);
+        }
+      } catch (err) {
+        alert('提交失败: ' + err);
+      } finally {
+        btn.innerText = '立即结构化解析入库';
+        btn.disabled = false;
+      }
+    }
+
+    // 手动巡检
+    async function triggerPipeline() {
+      const btn = document.getElementById('syncBtn');
+      const icon = document.getElementById('syncIcon');
+      icon.classList.add('animate-spin');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/pipeline/trigger', { method: 'POST' });
+        const data = await res.json();
+        alert('全自动增量巡检执行完毕！\n' + (data.run ? data.run.summary : '完成'));
+        fetchEvents();
+        fetchStats();
+      } catch (err) {
+        alert('执行失败: ' + err);
+      } finally {
+        icon.classList.remove('animate-spin');
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

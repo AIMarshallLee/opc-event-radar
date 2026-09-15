@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & Dependencies (Resource Avoidance)
+node_modules/
+.next/
+.venv/
+env/
+venv/
+ENV/
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Database & local data
+data/events.db
+data/*.sqlite
+*.log
+.DS_Store

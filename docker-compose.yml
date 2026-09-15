@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  opc-event-radar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hangzhou-opc-event-radar
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      - RADAR_HOST=0.0.0.0
+      - RADAR_PORT=8765
+      - APP_ENV=production
+      - TZ=Asia/Shanghai
+    volumes:
+      # 持久化挂载 SQLite 数据与运行日志
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/api/stats"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
