@@ -1,0 +1,55 @@
+name: ⚡ 杭州 AI/OPC 活动雷达全自动巡检
+
+on:
+  schedule:
+    # 每天定点执行 4 次巡检 (对应北京时间 08:00, 12:00, 18:00, 23:00)
+    # GitHub Actions 使用 UTC 时间
+    - cron: '0 0 * * *'   # 北京时间 08:00
+    - cron: '0 4 * * *'   # 北京时间 12:00
+    - cron: '0 10 * * *'  # 北京时间 18:00
+    - cron: '0 15 * * *'  # 北京时间 23:00
+  workflow_dispatch:      # 支持在 GitHub 网页一键手动触发
+
+jobs:
+  radar-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     # 允许将更新后的数据写回仓库
+
+    steps:
+      - name: 检出仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 配置 Python 3.11 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安装巡检依赖
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 启动全网多源采集与研判流水线
+        run: |
+          PYTHONPATH=. python3 run.py --pipeline-only
+
+      - name: 自动提交更新后的情报数据库与日历
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 强制暂存数据库与运行日志
+          git add -f data/events.db
+          
+          # 检查是否有文件变更
+          if git diff --staged --quiet; then
+            echo "✅ 本轮巡检未发现新增活动，数据库无变动。"
+          else
+            echo "⚡ 检测到新活动入库，正在提交并推送至 GitHub..."
+            git commit -m "chore(radar): 自动化巡检新活动入库 [skip ci]"
+            git push origin HEAD:${{ github.ref }}
+          fi
