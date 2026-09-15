@@ -54,7 +54,7 @@ class HuodongxingFetcher(BaseFetcher):
                     # 时间解析 (例如: 09月18日 | 14:00)
                     # 默认城市推断
                     raw_location = "杭州"
-                    for default_c in ["上海", "深圳", "厦门", "杭州"]:
+                    for default_c in ["北京", "广州", "成都", "武汉", "上海", "深圳", "厦门", "杭州"]:
                         if default_c in self.source.name or default_c in fetch_url:
                             raw_location = default_c
                             break
@@ -66,7 +66,7 @@ class HuodongxingFetcher(BaseFetcher):
                             raw_time = p
                             if idx + 1 < len(parts) and re.match(r'^\d{1,2}:\d{2}', parts[idx+1]):
                                 raw_time += " " + parts[idx+1]
-                        if any(c in p for c in ['杭州', '上海', '深圳', '厦门']) or any(d in p for d in ['余杭', '滨江', '西湖', '南山', '福田', '浦东', '徐汇', '思明', '软件园']):
+                        if any(c in p for c in ['杭州', '上海', '北京', '深圳', '广州', '成都', '厦门', '武汉']) or any(d in p for d in ['余杭', '滨江', '西湖', '海淀', '朝阳', '南山', '福田', '浦东', '徐汇', '天河', '海珠', '高新', '天府', '思明', '软件园', '光谷', '东湖高新']):
                             raw_location = p
 
                     # 主办方通常在包含“粉丝”或“活动”前的一两项

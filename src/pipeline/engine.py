@@ -33,7 +33,11 @@ FETCHER_MAP = {
     "wechat_search": WeChatSearchFetcher,
     "huodongxing_shanghai_ai": HuodongxingFetcher,
     "huodongxing_shenzhen_ai": HuodongxingFetcher,
-    "huodongxing_xiamen_ai": HuodongxingFetcher
+    "huodongxing_xiamen_ai": HuodongxingFetcher,
+    "huodongxing_beijing_ai": HuodongxingFetcher,
+    "huodongxing_guangzhou_ai": HuodongxingFetcher,
+    "huodongxing_chengdu_ai": HuodongxingFetcher,
+    "huodongxing_wuhan_ai": HuodongxingFetcher
 }
 
 def process_single_candidate(cand: Dict[str, Any], existing_events: List[Event]) -> Dict[str, Any]:

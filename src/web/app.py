@@ -247,7 +247,11 @@ def ical_subscription_feed(
     """
     events = get_all_events()
     ics_text = generate_ical_feed(events, min_score=min_score, category=category, city=city)
-    city_en_map = {"杭州": "hangzhou", "上海": "shanghai", "深圳": "shenzhen", "厦门": "xiamen"}
+    city_en_map = {
+        "杭州": "hangzhou", "上海": "shanghai", "北京": "beijing",
+        "深圳": "shenzhen", "广州": "guangzhou", "成都": "chengdu",
+        "厦门": "xiamen", "武汉": "wuhan"
+    }
     slug = city_en_map.get(city, "events") if city else "hangzhou"
     filename = f"{slug}-ai-events.ics"
     return Response(

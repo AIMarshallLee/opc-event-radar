@@ -139,13 +139,29 @@
             <span>🗼 上海</span>
             <span id="badge-上海" class="text-[10px] opacity-80"></span>
           </button>
+          <button onclick="setCity('北京')" data-city="北京" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🇨🇳 北京</span>
+            <span id="badge-北京" class="text-[10px] opacity-80"></span>
+          </button>
           <button onclick="setCity('深圳')" data-city="深圳" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
             <span>🏙️ 深圳</span>
             <span id="badge-深圳" class="text-[10px] opacity-80"></span>
           </button>
+          <button onclick="setCity('广州')" data-city="广州" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🚢 广州</span>
+            <span id="badge-广州" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('成都')" data-city="成都" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🐼 成都</span>
+            <span id="badge-成都" class="text-[10px] opacity-80"></span>
+          </button>
           <button onclick="setCity('厦门')" data-city="厦门" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
             <span>🌊 厦门</span>
             <span id="badge-厦门" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('武汉')" data-city="武汉" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>⚡ 武汉</span>
+            <span id="badge-武汉" class="text-[10px] opacity-80"></span>
           </button>
           <button onclick="setCity('all')" data-city="all" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
             <span>🌐 全部城市</span>
@@ -541,10 +557,22 @@
           if (region.includes('shanghai') || region.includes('上海')) {
             setCity('上海', false, true);
             return;
-          } else if (region.includes('shenzhen') || region.includes('深圳') || region.includes('guangdong')) {
+          } else if (region.includes('beijing') || region.includes('北京')) {
+            setCity('北京', false, true);
+            return;
+          } else if (region.includes('shenzhen') || region.includes('深圳')) {
             setCity('深圳', false, true);
             return;
-          } else if (region.includes('xiamen') || region.includes('厦门') || region.includes('fujian')) {
+          } else if (region.includes('guangzhou') || region.includes('广州') || region.includes('guangdong')) {
+            setCity('广州', false, true);
+            return;
+          } else if (region.includes('chengdu') || region.includes('成都') || region.includes('sichuan') || region.includes('四川')) {
+            setCity('成都', false, true);
+            return;
+          } else if (region.includes('wuhan') || region.includes('武汉') || region.includes('hubei') || region.includes('湖北')) {
+            setCity('武汉', false, true);
+            return;
+          } else if (region.includes('xiamen') || region.includes('厦门') || region.includes('fujian') || region.includes('福建')) {
             setCity('厦门', false, true);
             return;
           }
@@ -553,10 +581,10 @@
         // 网络超时或失败
       }
 
-      // 2. 关键兜底保障：若未匹配到上海/深圳/厦门，100% 自动回退默认选中杭州
+      // 2. 关键兜底保障：若未匹配到支持的 8 大城市，100% 自动回退默认选中杭州
       setCity('杭州', false, false);
       if (noticeText) {
-        noticeText.innerText = '已为你推荐【杭州大本营】精彩沙龙 (支持顶部自由切换上海/深圳/厦门)';
+        noticeText.innerText = '已为你推荐【杭州大本营】精彩沙龙 (支持顶部自由切换 8 大核心城市)';
         noticeIcon.innerText = '⚡';
       }
     }
@@ -630,7 +658,7 @@
           // 更新城市活动数量徽标
           if (data.summary.city_breakdown) {
             const cb = data.summary.city_breakdown;
-            ['杭州', '上海', '深圳', '厦门'].forEach(c => {
+            ['杭州', '上海', '北京', '深圳', '广州', '成都', '厦门', '武汉'].forEach(c => {
               const el = document.getElementById(`badge-${c}`);
               if (el && cb[c]) {
                 el.innerText = cb[c];

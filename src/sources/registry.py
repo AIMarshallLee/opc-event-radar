@@ -112,6 +112,46 @@ DEFAULT_SOURCES: List[Dict[str, Any]] = [
         "enabled": True,
         "fetch_method": "http_html",
         "notes": "软件园二期/三期出海工具与独立站开发者线下交流"
+    },
+    {
+        "id": "huodongxing_beijing_ai",
+        "name": "活动行·北京 AI 基座模型与早期创投大会",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E5%8C%97%E4%BA%AC+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "中关村智造大街、海淀五道口基座模型与顶尖极客闭门沙龙"
+    },
+    {
+        "id": "huodongxing_guangzhou_ai",
+        "name": "活动行·广州跨境出海与泛娱乐 AI 沙龙",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E5%B9%BF%E5%B7%9E+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "琶洲人工智能试验区、天河科韵路出海跨境与短剧创新"
+    },
+    {
+        "id": "huodongxing_chengdu_ai",
+        "name": "活动行·成都 AIGC 创意与 OPC 数字游民面基",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E6%88%90%E9%83%BD+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "天府软件园、菁蓉汇、麓湖一人公司与数字游民极客组局"
+    },
+    {
+        "id": "huodongxing_wuhan_ai",
+        "name": "活动行·武汉光谷硬科技与青年极客沙龙",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E6%AD%A6%E6%B1%89+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "东湖高新区光谷软件园、具身智能与高校创客实战活动"
     }
 ]
 

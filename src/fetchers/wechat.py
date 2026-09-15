@@ -111,8 +111,13 @@ class WeChatSearchFetcher(BaseFetcher):
             "杭州 AI 闭门会",
             "上海 AI 闭门会",
             "模速空间 AI 沙龙",
+            "北京 AI 闭门会",
+            "中关村 AI 沙龙",
             "深圳 AI 硬件 沙龙",
             "深圳 FDE 开发者 线下",
+            "广州 跨境出海 AI",
+            "成都 独立开发 面基",
+            "武汉 光谷 AI 沙龙",
             "厦门 独立开发 出海",
             "杭州 生财 线下"
         ]
@@ -142,7 +147,7 @@ class WeChatSearchFetcher(BaseFetcher):
                     author_el = box.find('a', class_='account')
                     author = author_el.get_text(strip=True) if author_el else "微信公众号"
 
-                    if not any(k in title for k in ['杭州', '上海', '深圳', '厦门', 'AI', 'OPC', 'FDE', '沙龙', '闭门', '大会', '报名', '出海', '模速空间']):
+                    if not any(k in title for k in ['杭州', '上海', '北京', '深圳', '广州', '成都', '厦门', '武汉', 'AI', 'OPC', 'FDE', '沙龙', '闭门', '大会', '报名', '出海', '模速空间', '光谷', '中关村', '琶洲']):
                         continue
 
                     candidates.append({
