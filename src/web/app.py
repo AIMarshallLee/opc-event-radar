@@ -53,6 +53,7 @@ def index_page():
 
 @app.get("/api/events")
 def list_events(
+    city: str = Query("all", description="all, 杭州, 上海, 深圳, 厦门"),
     time_filter: str = Query("all", description="all, today, tomorrow, this_week, weekend"),
     category: str = Query("all", description="all, AI, OPC, FDE, Agent, 开发者, 创业, 投融资, 出海..."),
     sort_by: str = Query("recommendation", description="recommendation, time, free_first"),
@@ -78,7 +79,12 @@ def list_events(
         if ev.status == "ended":
             continue
 
-        # 2. 分类筛选
+        # 2. 城市筛选 (指定城市同时展示线上活动)
+        if city != "all":
+            if ev.city != city and ev.city != "线上":
+                continue
+
+        # 3. 分类筛选
         if category != "all" and ev.category != category:
             continue
 
@@ -139,6 +145,9 @@ def get_observability():
     verified_count = len([e for e in events if e.verification_status == "verified"])
     partially_count = len([e for e in events if e.verification_status == "partially_verified"])
 
+    from collections import Counter
+    city_counts = dict(Counter([e.city for e in events]))
+
     return {
         "summary": {
             "total_events": len(events),
@@ -147,7 +156,8 @@ def get_observability():
             "partially_verified_events": partially_count,
             "active_sources": len([s for s in sources if s.status == "active"]),
             "total_sources": len(sources),
-            "signals_count": len(signals)
+            "signals_count": len(signals),
+            "city_breakdown": city_counts
         },
         "sources": [s.dict() for s in sources],
         "recent_runs": [r.dict() for r in runs],
@@ -224,22 +234,27 @@ def manual_intake(req: ManualIntakeRequest):
     return {"status": "success", "event": event.dict()}
 
 @app.get("/feed/hangzhou-ai.ics")
+@app.get("/feed/events.ics")
 def ical_subscription_feed(
+    city: Optional[str] = Query(None, description="城市过滤 (杭州/上海/深圳/厦门)"),
     min_score: int = Query(75, description="最低综合评分过滤"),
     category: Optional[str] = Query(None, description="分类过滤")
 ):
     """
     全平台 iCalendar (.ics) 日历订阅源。
     支持在 iPhone、Mac Calendar、Google 日历、Outlook 中一键订阅，
-    静默同步未来高分杭州 AI / OPC 活动并提前 2 小时推送日程提醒。
+    静默同步各城市高分 AI / OPC 活动并提前 2 小时推送日程提醒。
     """
     events = get_all_events()
-    ics_text = generate_ical_feed(events, min_score=min_score, category=category)
+    ics_text = generate_ical_feed(events, min_score=min_score, category=category, city=city)
+    city_en_map = {"杭州": "hangzhou", "上海": "shanghai", "深圳": "shenzhen", "厦门": "xiamen"}
+    slug = city_en_map.get(city, "events") if city else "hangzhou"
+    filename = f"{slug}-ai-events.ics"
     return Response(
         content=ics_text,
         media_type="text/calendar; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="hangzhou-ai-events.ics"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "max-age=1800"
         }
     )

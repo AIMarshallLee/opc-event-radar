@@ -44,9 +44,9 @@
         <div>
           <h1 class="text-base sm:text-lg font-bold tracking-tight flex items-center space-x-2 text-slate-900 dark:text-white">
             <span>OPC 活动情报</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300 border border-brand-500/30">杭州站 V0.1</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300 border border-brand-500/30" id="headerCityBadge">杭州·上海·深圳·厦门</span>
           </h1>
-          <p class="text-[11px] text-slate-500 dark:text-gray-400 hidden sm:block">杭州今天有什么值得参加的？一页看完，洞察真价值</p>
+          <p class="text-[11px] text-slate-500 dark:text-gray-400 hidden sm:block">杭州 / 上海 / 深圳 / 厦门 AI·FDE·OPC 线下组局，一页看完</p>
         </div>
       </div>
       
@@ -125,6 +125,40 @@
 
     <!-- 筛选与控制面板 -->
     <section class="space-y-3">
+      <!-- 核心升级：城市切换与智能定位 -->
+      <div class="flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl border transition-colors bg-white/70 border-slate-200 dark:bg-gray-900/70 dark:border-gray-800 shadow-sm">
+        <div class="flex items-center space-x-1.5 overflow-x-auto text-xs no-scrollbar" id="citySwitcher">
+          <span class="text-[11px] font-bold text-slate-400 dark:text-gray-500 mr-1 flex items-center">
+            <span>📍 城市:</span>
+          </span>
+          <button onclick="setCity('杭州')" data-city="杭州" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-brand-600 text-white shadow-sm">
+            <span>⚡ 杭州</span>
+            <span id="badge-杭州" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('上海')" data-city="上海" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🗼 上海</span>
+            <span id="badge-上海" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('深圳')" data-city="深圳" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🏙️ 深圳</span>
+            <span id="badge-深圳" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('厦门')" data-city="厦门" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🌊 厦门</span>
+            <span id="badge-厦门" class="text-[10px] opacity-80"></span>
+          </button>
+          <button onclick="setCity('all')" data-city="all" class="city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+            <span>🌐 全部城市</span>
+          </button>
+        </div>
+
+        <!-- 智能定位感知与回退提示条 -->
+        <div id="locationNotice" class="text-[11px] px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1 text-slate-500 dark:text-gray-400">
+          <span id="locationNoticeIcon">🧭</span>
+          <span id="locationNoticeText">根据网络定位智能推荐，若非支持城市自动呈现杭州精选</span>
+        </div>
+      </div>
+
       <!-- 第一行：时间切片与排序 -->
       <div class="flex flex-wrap items-center justify-between gap-3">
         <!-- 时间筛选 (今天、明天、本周、周末) -->
@@ -462,7 +496,10 @@
     // 运行初始化
     initTheme();
 
+    let currentCity = localStorage.getItem('opc_city') || '杭州';
+
     let currentFilter = {
+      city: currentCity,
       time_filter: 'all',
       category: 'all',
       sort_by: 'recommendation',
@@ -472,9 +509,102 @@
 
     // 初始化加载
     document.addEventListener('DOMContentLoaded', () => {
+      autoDetectCity();
       fetchEvents();
       fetchStats();
     });
+
+    // 智能城市定位推断（无弹窗扰民，若不在指定城市自动回退选择杭州）
+    async function autoDetectCity() {
+      // 1. 如果用户手动选择过城市，优先尊重用户喜好
+      const manualCity = localStorage.getItem('opc_city_manual');
+      if (manualCity) {
+        setCity(manualCity, false, false);
+        return;
+      }
+
+      const noticeText = document.getElementById('locationNoticeText');
+      const noticeIcon = document.getElementById('locationNoticeIcon');
+
+      try {
+        // 轻量快速 IP 地理推断
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const res = await fetch('https://ipapi.co/json/', { signal: controller.signal }).catch(() => null);
+        clearTimeout(timeoutId);
+
+        if (res && res.ok) {
+          const data = await res.json();
+          const region = (data.region || data.city || '').toLowerCase();
+          
+          if (region.includes('shanghai') || region.includes('上海')) {
+            setCity('上海', false, true);
+            return;
+          } else if (region.includes('shenzhen') || region.includes('深圳') || region.includes('guangdong')) {
+            setCity('深圳', false, true);
+            return;
+          } else if (region.includes('xiamen') || region.includes('厦门') || region.includes('fujian')) {
+            setCity('厦门', false, true);
+            return;
+          }
+        }
+      } catch (e) {
+        // 网络超时或失败
+      }
+
+      // 2. 关键兜底保障：若未匹配到上海/深圳/厦门，100% 自动回退默认选中杭州
+      setCity('杭州', false, false);
+      if (noticeText) {
+        noticeText.innerText = '已为你推荐【杭州大本营】精彩沙龙 (支持顶部自由切换上海/深圳/厦门)';
+        noticeIcon.innerText = '⚡';
+      }
+    }
+
+    function setCity(city, isManual = true, showNotice = true) {
+      currentCity = city;
+      currentFilter.city = city;
+
+      if (isManual) {
+        localStorage.setItem('opc_city_manual', city);
+      }
+      localStorage.setItem('opc_city', city);
+
+      // 更新按钮样式
+      document.querySelectorAll('.city-btn').forEach(btn => {
+        const c = btn.getAttribute('data-city');
+        if (c === city) {
+          btn.className = 'city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-brand-600 text-white shadow-sm';
+        } else {
+          btn.className = 'city-btn px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300';
+        }
+      });
+
+      // 更新定位提示文本
+      const noticeText = document.getElementById('locationNoticeText');
+      const noticeIcon = document.getElementById('locationNoticeIcon');
+      if (noticeText) {
+        if (city === 'all') {
+          noticeText.innerText = '正在浏览全国四大核心城市 AI/FDE/OPC 组局';
+          noticeIcon.innerText = '🌐';
+        } else if (showNotice) {
+          noticeText.innerText = `📍 已为你自动定位并切换至【${city}站】`;
+          noticeIcon.innerText = '📍';
+        } else {
+          noticeText.innerText = `当前选中【${city}站】(可随时在左侧切换城市)`;
+          noticeIcon.innerText = '📍';
+        }
+      }
+
+      // 同步顶部标题 Badge
+      const headerBadge = document.getElementById('headerCityBadge');
+      if (headerBadge) {
+        headerBadge.innerText = city === 'all' ? '全国核心城市' : `${city}站`;
+      }
+
+      fetchEvents();
+      updateCalendarLink();
+    }
 
     async function fetchEvents() {
       try {
@@ -496,6 +626,17 @@
         if (data.summary) {
           document.getElementById('statToday').innerText = data.summary.upcoming_events || 0;
           document.getElementById('statActiveSources').innerText = data.summary.active_sources || 6;
+          
+          // 更新城市活动数量徽标
+          if (data.summary.city_breakdown) {
+            const cb = data.summary.city_breakdown;
+            ['杭州', '上海', '深圳', '厦门'].forEach(c => {
+              const el = document.getElementById(`badge-${c}`);
+              if (el && cb[c]) {
+                el.innerText = cb[c];
+              }
+            });
+          }
         }
       } catch (err) {}
     }
@@ -528,8 +669,8 @@
                   <span class="text-[11px] px-2 py-0.5 rounded-md font-semibold border bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30">
                     ${ev.category}
                   </span>
-                  <span class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-300">
-                    ${ev.district || '杭州'}
+                  <span class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-300 font-medium">
+                    📍 ${ev.city || '杭州'} · ${ev.district || ''}
                   </span>
                   ${ev.source_id.includes('wechat') ? '<span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">微信公众号</span>' : ''}
                 </div>
@@ -670,9 +811,16 @@
     }
 
     // 日历 Modal
+    function updateCalendarLink() {
+      const calInput = document.getElementById('calFeedUrl');
+      if (!calInput) return;
+      const cityParam = currentCity && currentCity !== 'all' ? `&city=${encodeURIComponent(currentCity)}` : '';
+      const feedUrl = window.location.origin + `/feed/events.ics?min_score=75${cityParam}`;
+      calInput.value = feedUrl;
+    }
+
     function openCalendarModal() {
-      const feedUrl = window.location.origin + '/feed/hangzhou-ai.ics?min_score=75';
-      document.getElementById('calFeedUrl').value = feedUrl;
+      updateCalendarLink();
       document.getElementById('calendarModal').classList.remove('hidden');
     }
 
@@ -690,7 +838,8 @@
     }
 
     function oneClickSubscribe() {
-      const feedUrl = window.location.origin + '/feed/hangzhou-ai.ics?min_score=75';
+      const cityParam = currentCity && currentCity !== 'all' ? `&city=${encodeURIComponent(currentCity)}` : '';
+      const feedUrl = window.location.origin + `/feed/events.ics?min_score=75${cityParam}`;
       const webcalUrl = feedUrl.replace(/^https?:\/\//i, 'webcal://');
       window.location.href = webcalUrl;
     }

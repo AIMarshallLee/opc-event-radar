@@ -44,7 +44,7 @@ def escape_ical_text(text: str) -> str:
     t = t.replace('\r\n', '\\n').replace('\n', '\\n')
     return t
 
-def generate_ical_feed(events: List[Event], min_score: int = 75, category: Optional[str] = None) -> str:
+def generate_ical_feed(events: List[Event], min_score: int = 75, category: Optional[str] = None, city: Optional[str] = None) -> str:
     """
     生成标准 RFC 5545 iCalendar (.ics) 日历订阅源文本。
     支持全平台（Apple 日历、Google Calendar、Outlook、飞书日历）。
@@ -52,18 +52,23 @@ def generate_ical_feed(events: List[Event], min_score: int = 75, category: Optio
     now = datetime.datetime.now()
     stamp_str = format_ical_datetime(now)
 
+    cal_name = f"⚡ {city} AI / OPC 活动雷达" if city and city != "all" else "⚡ 全国 AI / OPC 活动情报雷达"
+    cal_desc = f"{city}高价值 AI、FDE 与一人公司(OPC)线下组局精选" if city and city != "all" else "高价值 AI、FDE 与一人公司(OPC)线下组局精选，包含深度推荐理由与避坑指南"
+
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//OPC Activity Radar//Hangzhou AI OPC Events Radar//CN",
+        "PRODID:-//OPC Activity Radar//AI OPC Events Radar//CN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:⚡ 杭州 AI / OPC 活动雷达",
-        "X-WR-CALDESC:杭州本土高价值 AI 与一人公司(OPC)活动情报精选，包含深度推荐理由与避坑指南",
+        f"X-WR-CALNAME:{cal_name}",
+        f"X-WR-CALDESC:{cal_desc}",
         "X-WR-TIMEZONE:Asia/Shanghai"
     ]
 
     filtered_events = [e for e in events if e.status != "ended" and e.overall_score >= min_score]
+    if city and city != "all":
+        filtered_events = [e for e in filtered_events if e.city == city or e.city == "线上"]
     if category and category != "all":
         filtered_events = [e for e in filtered_events if e.category == category]
 

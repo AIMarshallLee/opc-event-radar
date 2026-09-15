@@ -15,7 +15,7 @@ from src.fetchers.segmentfault import SegmentFaultFetcher
 from src.fetchers.discovery import DiscoveryAgentFetcher
 from src.fetchers.luma import LumaFetcher
 from src.fetchers.wechat import WeChatSearchFetcher
-from src.pipeline.location_validator import validate_hangzhou_location
+from src.pipeline.location_validator import resolve_event_location
 from src.pipeline.deduplicator import normalize_title, is_same_event, merge_event_sources
 from src.pipeline.classifier import classify_event
 from src.pipeline.verification import calculate_confidence_score
@@ -30,7 +30,10 @@ FETCHER_MAP = {
     "hangzhou_opc_initiative": DiscoveryAgentFetcher,
     "discovery_agent": DiscoveryAgentFetcher,
     "luma_hangzhou": LumaFetcher,
-    "wechat_search": WeChatSearchFetcher
+    "wechat_search": WeChatSearchFetcher,
+    "huodongxing_shanghai_ai": HuodongxingFetcher,
+    "huodongxing_shenzhen_ai": HuodongxingFetcher,
+    "huodongxing_xiamen_ai": HuodongxingFetcher
 }
 
 def process_single_candidate(cand: Dict[str, Any], existing_events: List[Event]) -> Dict[str, Any]:
@@ -42,10 +45,10 @@ def process_single_candidate(cand: Dict[str, Any], existing_events: List[Event])
     raw_loc = cand.get("raw_location", "")
     raw_text = cand.get("raw_text", "")
     
-    # 杭州地域强校验
-    is_hz, district, venue = validate_hangzhou_location(title, raw_loc, raw_text)
-    if not is_hz:
-        return {"status": "rejected", "reason": "not_hangzhou"}
+    # 多城市地域解析 (杭州/上海/深圳/厦门/线上)
+    is_valid, city_name, district, venue = resolve_event_location(title, raw_loc, raw_text)
+    if not is_valid:
+        return {"status": "rejected", "reason": "unsupported_city"}
 
     norm_title = normalize_title(title)
     organizer = cand.get("organizer", "未知").strip()
@@ -110,7 +113,7 @@ def process_single_candidate(cand: Dict[str, Any], existing_events: List[Event])
         normalized_title=norm_title,
         description=desc,
         start_time=time_str,
-        city="杭州",
+        city=city_name,
         district=district,
         venue=venue,
         address=venue if venue != "杭州" else "",

@@ -81,7 +81,37 @@ DEFAULT_SOURCES: List[Dict[str, Any]] = [
         "priority": 2,
         "enabled": True,
         "fetch_method": "web_search",
-        "notes": "定期自动化检索微信公众号发布的杭州 AI、OPC、独立开发、生财同城局"
+        "notes": "定期自动化检索微信公众号发布的杭州、上海、深圳、厦门 AI/OPC 闭门会"
+    },
+    {
+        "id": "huodongxing_shanghai_ai",
+        "name": "活动行·上海 AI & 黑客松大会",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E4%B8%8A%E6%B5%B7+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "聚焦徐汇模速空间、张江高科与大厂 AI 峰会"
+    },
+    {
+        "id": "huodongxing_shenzhen_ai",
+        "name": "活动行·深圳 AI 硬件端侧与 FDE 交付沙龙",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E6%B7%B1%E5%9C%B3+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "南山科技园、粤海街道硬件+AI落地与出海前沿"
+    },
+    {
+        "id": "huodongxing_xiamen_ai",
+        "name": "活动行·厦门出海与独立开发者 AI 研讨",
+        "type": "event_platform",
+        "url": "https://www.huodongxing.com/search?qs=%E5%8E%A6%E9%97%A8+AI",
+        "priority": 2,
+        "enabled": True,
+        "fetch_method": "http_html",
+        "notes": "软件园二期/三期出海工具与独立站开发者线下交流"
     }
 ]
 
