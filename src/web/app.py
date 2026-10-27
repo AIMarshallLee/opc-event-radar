@@ -20,6 +20,7 @@ from src.pipeline.verification import calculate_confidence_score
 from src.pipeline.scorer import evaluate_event_scores
 from src.pipeline.comment_generator import generate_ai_comment
 from src.content.ical import generate_ical_feed
+from src.content.rss import generate_atom_feed
 from src.pipeline.vision_extractor import extract_event_from_image
 from src.fetchers.wechat import WeChatArticleFetcher
 from fastapi import UploadFile, File, Response
@@ -261,6 +262,26 @@ def ical_subscription_feed(
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "max-age=1800"
         }
+    )
+
+@app.get("/feed/events.xml")
+@app.get("/feed/events.atom")
+def atom_subscription_feed(
+    city: Optional[str] = Query(None, description="城市过滤 (杭州/上海/深圳/厦门)"),
+    min_score: int = Query(75, description="最低综合评分过滤"),
+    category: Optional[str] = Query(None, description="分类过滤")
+):
+    """
+    Atom (RFC 4287) 订阅源，与 .ics 日历订阅互补。
+    可在 Feedly、Inoreader、Folo 等 RSS/Atom 阅读器中订阅高分活动流，
+    过滤口径与 /feed/events.ics 完全一致（状态、评分、城市、分类）。
+    """
+    events = get_all_events()
+    atom_text = generate_atom_feed(events, min_score=min_score, category=category, city=city)
+    return Response(
+        content=atom_text,
+        media_type="application/atom+xml; charset=utf-8",
+        headers={"Cache-Control": "max-age=1800"}
     )
 
 @app.post("/api/intake/upload")
