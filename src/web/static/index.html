@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OPC 活动情报 | 杭州 AI / OPC 活动雷达 V0.1</title>
+  <!-- 订阅源自动发现：RSS/Atom 阅读器与日历应用可识别 -->
+  <link rel="alternate" type="application/atom+xml" title="AI / OPC 活动雷达 (Atom)" href="/feed/events.xml">
+  <link rel="alternate" type="text/calendar" title="AI / OPC 活动雷达 (iCal)" href="/feed/events.ics">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -343,11 +346,22 @@
           </div>
         </div>
 
+        <div class="border rounded-xl p-3 space-y-2 bg-slate-50 border-slate-200 dark:bg-gray-900 dark:border-gray-800">
+          <label class="block font-medium text-slate-700 dark:text-gray-300">RSS / Atom 阅读器订阅（Feedly、Inoreader、Folo 等，过滤口径一致）：</label>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="atomFeedUrl" readonly class="w-full border rounded-lg px-2.5 py-1.5 text-xs font-mono select-all bg-white border-slate-300 text-brand-700 dark:bg-black/50 dark:border-gray-700 dark:text-brand-300">
+            <button onclick="copyAtomUrl()" id="copyAtomBtn" class="px-3 py-1.5 rounded-lg border whitespace-nowrap transition bg-white hover:bg-slate-100 border-slate-300 text-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-200">
+              复制
+            </button>
+          </div>
+        </div>
+
         <div class="space-y-2 pt-1 text-slate-700 dark:text-gray-300">
           <div class="font-bold text-slate-900 dark:text-gray-200">📱 快速配置指引：</div>
           <div class="p-2.5 rounded-xl border space-y-1.5 text-[11px] bg-slate-50 border-slate-200 text-slate-600 dark:bg-gray-900/60 dark:border-gray-800/80 dark:text-gray-400">
             <p>• <strong>Apple 日历 (iPhone/Mac)</strong>：打开「日历」应用 ➔ 文件 ➔「新建日历订阅」➔ 粘贴上方链接并设置每小时刷新。</p>
             <p>• <strong>Outlook / Google Calendar</strong>：进入网页版 ➔ 添加日历 ➔ 从 Web 订阅 ➔ 粘贴上方链接即可全端自动同步。</p>
+            <p>• <strong>RSS/Atom 阅读器</strong>：复制下方 Atom 地址，在 Feedly、Inoreader、Folo 等阅读器中「添加订阅」即可收到新活动推送。</p>
           </div>
         </div>
 
@@ -845,6 +859,8 @@
       const cityParam = currentCity && currentCity !== 'all' ? `&city=${encodeURIComponent(currentCity)}` : '';
       const feedUrl = window.location.origin + `/feed/events.ics?min_score=75${cityParam}`;
       calInput.value = feedUrl;
+      const atomInput = document.getElementById('atomFeedUrl');
+      if (atomInput) atomInput.value = window.location.origin + `/feed/events.xml?min_score=75${cityParam}`;
     }
 
     function openCalendarModal() {
@@ -861,6 +877,16 @@
       input.select();
       navigator.clipboard.writeText(input.value);
       const btn = document.getElementById('copyCalBtn');
+      btn.innerText = '已复制!';
+      setTimeout(() => btn.innerText = '复制', 2000);
+    }
+
+    function copyAtomUrl() {
+      const input = document.getElementById('atomFeedUrl');
+      if (!input) return;
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      const btn = document.getElementById('copyAtomBtn');
       btn.innerText = '已复制!';
       setTimeout(() => btn.innerText = '复制', 2000);
     }
