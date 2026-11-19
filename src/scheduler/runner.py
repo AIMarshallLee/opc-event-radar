@@ -28,18 +28,20 @@ def manage_event_lifecycles():
         import re
         m = re.search(r'(\d{1,2})月(\d{1,2})日', start_t)
         if m:
-            month = int(m.group(1))
-            day = int(m.group(2))
-            # 假定年份为当前年
-            ev_date = datetime.date(now.year, month, day)
-            today_date = now.date()
+            try:
+                month = int(m.group(1))
+                day = int(m.group(2))
+                ev_date = datetime.date(now.year, month, day)
+                today_date = now.date()
 
-            if ev_date < today_date:
-                ev.status = "ended"
-            elif ev_date == today_date:
-                ev.status = "today"
-            else:
-                ev.status = "upcoming"
+                if ev_date < today_date:
+                    ev.status = "ended"
+                elif ev_date == today_date:
+                    ev.status = "today"
+                else:
+                    ev.status = "upcoming"
+            except Exception:
+                pass
         elif "今天" in start_t:
             ev.status = "today"
 
